@@ -11,20 +11,39 @@ from pathlib import Path
 PUBLIC_DIR = Path("public")
 OUTPUT_FILE = Path("index.html")
 
+ICON_FOLDER = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="icon icon-folder"><path d="M2 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>'
+ICON_FILE   = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="icon icon-file"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>'
+ICON_CHEVRON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="icon icon-chevron"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>'
 
-def build_tree(directory: Path) -> str:
+
+def build_tree(directory: Path, depth: int = 0) -> str:
     entries = sorted(directory.iterdir(), key=lambda p: (p.is_file(), p.name.lower()))
     if not entries:
         return ""
-    lines = ["<ul>"]
+    lines = [f'<ul class="tree-list" data-depth="{depth}">']
     for entry in entries:
         name = html.escape(entry.name)
         if entry.is_dir():
-            inner = build_tree(entry)
-            lines.append(f'<li><span class="folder">&#x1F4C1; {name}</span>{inner}</li>')
+            inner = build_tree(entry, depth + 1)
+            lines.append(
+                f'<li class="tree-item tree-dir">'
+                f'<span class="tree-row dir-row">'
+                f'{ICON_CHEVRON}{ICON_FOLDER}'
+                f'<span class="item-name">{name}</span>'
+                f'</span>'
+                f'{inner}'
+                f'</li>'
+            )
         else:
             rel = entry.relative_to(Path("."))
-            lines.append(f'<li><a href="viewer.html?file={rel}">&#x1F4C4; {name}</a></li>')
+            lines.append(
+                f'<li class="tree-item tree-file">'
+                f'<a href="viewer.html?file={rel}" class="tree-row file-row">'
+                f'{ICON_FILE}'
+                f'<span class="item-name">{name}</span>'
+                f'</a>'
+                f'</li>'
+            )
     lines.append("</ul>")
     return "\n".join(lines)
 
@@ -47,87 +66,349 @@ def generate() -> None:
   <style>
     *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
 
+    :root {{
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text-primary: #0f172a;
+      --text-secondary: #64748b;
+      --text-muted: #94a3b8;
+      --accent: #2563eb;
+      --accent-light: #eff6ff;
+      --accent-hover: #1d4ed8;
+      --folder-color: #f59e0b;
+      --file-color: #64748b;
+      --header-bg: #0f172a;
+      --header-text: #f8fafc;
+      --radius: 12px;
+      --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+    }}
+
+    html {{ font-size: 16px; }}
+
     body {{
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
       min-height: 100vh;
-      padding: 48px 16px;
+      display: flex;
+      flex-direction: column;
     }}
 
-    .card {{
-      background: #fff;
-      border-radius: 16px;
-      padding: 40px 48px;
-      box-shadow: 0 20px 60px rgba(0,0,0,.2);
-      max-width: 640px;
-      margin: 0 auto;
+    /* ── Header ── */
+    .site-header {{
+      background: var(--header-bg);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }}
 
-    h1 {{
-      font-size: 1.75rem;
-      color: #1a1a2e;
-      margin-bottom: 4px;
+    .site-header .brand {{
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--header-text);
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
     }}
 
-    .subtitle {{
-      color: #888;
-      font-size: 0.9rem;
-      margin-bottom: 28px;
+    .brand-icon {{
+      width: 28px;
+      height: 28px;
+      background: var(--accent);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }}
 
-    ul {{
+    .brand-icon svg {{
+      width: 16px;
+      height: 16px;
+      color: #fff;
+    }}
+
+    .site-header .tag {{
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: rgba(37,99,235,.25);
+      color: #93c5fd;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(147,197,253,.2);
+    }}
+
+    /* ── Main layout ── */
+    main {{
+      flex: 1;
+      max-width: 860px;
+      width: 100%;
+      margin: 40px auto;
+      padding: 0 20px;
+    }}
+
+    /* ── Page title ── */
+    .page-head {{
+      margin-bottom: 24px;
+    }}
+
+    .page-head h1 {{
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      line-height: 1.25;
+    }}
+
+    .page-head p {{
+      margin-top: 6px;
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+    }}
+
+    .page-head p code {{
+      background: var(--border);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+      font-size: 0.8em;
+    }}
+
+    /* ── File tree card ── */
+    .tree-card {{
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }}
+
+    .tree-card-header {{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      background: #fafbfc;
+    }}
+
+    .tree-card-header .path-label {{
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }}
+
+    .tree-card-header .path-label svg {{
+      width: 14px;
+      height: 14px;
+      color: var(--text-muted);
+    }}
+
+    .tree-body {{
+      padding: 12px 0;
+    }}
+
+    /* ── Tree list ── */
+    .tree-list {{
       list-style: none;
-      padding-left: 20px;
     }}
 
-    ul:first-of-type {{
+    .tree-list[data-depth="0"] {{
+      padding: 0;
+    }}
+
+    .tree-list[data-depth]:not([data-depth="0"]) {{
+      margin-left: 20px;
+      border-left: 1px solid var(--border);
       padding-left: 0;
     }}
 
-    li {{
-      margin: 6px 0;
-      font-size: 0.95rem;
+    .tree-item {{
+      position: relative;
     }}
 
-    a {{
-      color: #667eea;
-      text-decoration: none;
+    .tree-row {{
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 20px;
+      font-size: 0.875rem;
+      cursor: pointer;
+      border-radius: 0;
+      transition: background 0.1s;
+      user-select: none;
+    }}
+
+    .tree-list:not([data-depth="0"]) > .tree-item > .tree-row {{
+      padding-left: 16px;
+    }}
+
+    .tree-row:hover {{
+      background: var(--accent-light);
+    }}
+
+    /* Folder row */
+    .dir-row {{
+      color: var(--text-primary);
       font-weight: 500;
     }}
 
-    a:hover {{
-      text-decoration: underline;
+    .dir-row .icon-chevron {{
+      color: var(--text-muted);
+      transition: transform 0.2s;
+      flex-shrink: 0;
     }}
 
-    .folder {{
-      font-weight: 600;
-      color: #444;
+    .dir-row .icon-folder {{
+      color: var(--folder-color);
+      flex-shrink: 0;
     }}
 
+    /* File row */
+    .file-row {{
+      text-decoration: none;
+      color: var(--text-primary);
+    }}
+
+    .file-row:hover {{
+      color: var(--accent);
+    }}
+
+    .file-row .icon-file {{
+      color: var(--file-color);
+      flex-shrink: 0;
+    }}
+
+    .file-row:hover .icon-file {{
+      color: var(--accent);
+    }}
+
+    /* Icons */
+    .icon {{
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }}
+
+    .item-name {{
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }}
+
+    /* Collapsible dirs */
+    .tree-dir > .tree-list {{
+      display: block;
+    }}
+
+    .tree-dir.collapsed > .tree-list {{
+      display: none;
+    }}
+
+    .tree-dir.collapsed .icon-chevron {{
+      transform: rotate(0deg);
+    }}
+
+    .tree-dir:not(.collapsed) .icon-chevron {{
+      transform: rotate(90deg);
+    }}
+
+    /* Empty state */
     .empty {{
-      color: #aaa;
+      padding: 32px 20px;
+      color: var(--text-muted);
       font-style: italic;
+      font-size: 0.875rem;
     }}
 
-    .badge {{
-      display: inline-block;
-      margin-top: 28px;
-      padding: 6px 16px;
-      background: #667eea;
-      color: #fff;
-      border-radius: 999px;
-      font-size: 0.8rem;
-      font-weight: 600;
+    .empty code {{
+      background: var(--border);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-style: normal;
+    }}
+
+    /* ── Footer ── */
+    footer {{
+      text-align: center;
+      padding: 24px 16px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }}
+
+    footer a {{
+      color: var(--text-muted);
+      text-decoration: none;
+    }}
+
+    footer a:hover {{
+      color: var(--accent);
+    }}
+
+    @media (max-width: 600px) {{
+      main {{ margin: 24px auto; }}
+      .tree-row {{ padding: 8px 14px; }}
     }}
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>&#x1F4C2; File Index</h1>
-    <p class="subtitle">Auto-generated from the <code>public/</code> folder. Add files there to see them here.</p>
-    {tree_html}
-    <div><span class="badge">&#x2705; GitHub Pages</span></div>
-  </div>
+
+  <header class="site-header">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v2H2V6zm0 4h16v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"/></svg>
+      </div>
+      File Index
+    </div>
+    <span class="tag">GitHub Pages</span>
+  </header>
+
+  <main>
+    <div class="page-head">
+      <h1>Browse Files</h1>
+      <p>Auto-generated from the <code>public/</code> folder. Add files there to see them here.</p>
+    </div>
+
+    <div class="tree-card">
+      <div class="tree-card-header">
+        <span class="path-label">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
+          public /
+        </span>
+      </div>
+      <div class="tree-body">
+        {tree_html}
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    Served via <a href="https://pages.github.com" target="_blank" rel="noopener">GitHub Pages</a>
+  </footer>
+
+  <script>
+    // Toggle folder collapse on click
+    document.querySelectorAll('.dir-row').forEach(row => {{
+      row.addEventListener('click', () => {{
+        row.closest('.tree-dir').classList.toggle('collapsed');
+      }});
+    }});
+  </script>
+
 </body>
 </html>
 """
