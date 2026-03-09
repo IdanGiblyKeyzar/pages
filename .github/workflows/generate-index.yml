@@ -2,7 +2,6 @@ name: Generate File Index
 
 on:
   push:
-    branches: [main, master]
     paths:
       - "public/**"
       - "scripts/generate_index.py"
