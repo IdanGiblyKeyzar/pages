@@ -3,86 +3,94 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GitHub Pages - Test Page</title>
+  <title>File Index</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      padding: 48px 16px;
     }
 
     .card {
       background: #fff;
       border-radius: 16px;
-      padding: 48px 56px;
-      text-align: center;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-      max-width: 480px;
-      width: 90%;
-    }
-
-    .icon {
-      font-size: 56px;
-      margin-bottom: 16px;
+      padding: 40px 48px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.2);
+      max-width: 640px;
+      margin: 0 auto;
     }
 
     h1 {
-      font-size: 2rem;
+      font-size: 1.75rem;
       color: #1a1a2e;
-      margin-bottom: 12px;
+      margin-bottom: 4px;
     }
 
-    p {
-      color: #555;
-      font-size: 1.05rem;
-      line-height: 1.6;
-      margin-bottom: 8px;
-    }
-
-    .badge {
-      display: inline-block;
-      margin-top: 24px;
-      padding: 8px 20px;
-      background: #667eea;
-      color: #fff;
-      border-radius: 999px;
+    .subtitle {
+      color: #888;
       font-size: 0.9rem;
-      font-weight: 600;
-      letter-spacing: 0.5px;
+      margin-bottom: 28px;
     }
 
-    .link {
-      display: inline-block;
-      margin-top: 16px;
-      color: #667eea;
+    ul {
+      list-style: none;
+      padding-left: 20px;
+    }
+
+    ul:first-of-type {
+      padding-left: 0;
+    }
+
+    li {
+      margin: 6px 0;
       font-size: 0.95rem;
+    }
+
+    a {
+      color: #667eea;
       text-decoration: none;
       font-weight: 500;
     }
 
-    .link:hover {
+    a:hover {
       text-decoration: underline;
+    }
+
+    .folder {
+      font-weight: 600;
+      color: #444;
+    }
+
+    .empty {
+      color: #aaa;
+      font-style: italic;
+    }
+
+    .badge {
+      display: inline-block;
+      margin-top: 28px;
+      padding: 6px 16px;
+      background: #667eea;
+      color: #fff;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
     }
   </style>
 </head>
 <body>
   <div class="card">
-    <div class="icon">&#x1F680;</div>
-    <h1>GitHub Pages Works!</h1>
-    <p>This page is live and served by <strong>GitHub Pages</strong>.</p>
-    <p>Your repository is set up correctly.</p>
-    <span class="badge">&#x2705; Deployment successful</span>
-    <br />
-    <a class="link" href="md/test.md">&#x1F4C4; View test.md</a>
+    <h1>&#x1F4C2; File Index</h1>
+    <p class="subtitle">Auto-generated from the <code>public/</code> folder. Add files there to see them here.</p>
+    <ul>
+<li><span class="folder">&#x1F4C1; md</span><ul>
+<li><a href="public/md/test.md">&#x1F4C4; test.md</a></li>
+</ul></li>
+</ul>
+    <div><span class="badge">&#x2705; GitHub Pages</span></div>
   </div>
 </body>
 </html>
