@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 Scans the `public/` directory and generates `index.html` with a linked folder tree.
+For each .md file, also generates a sibling .html viewer that renders it as Markdown.
 Run from the repo root: python3 scripts/generate_index.py
 """
 
@@ -11,6 +12,80 @@ from pathlib import Path
 PUBLIC_DIR = Path("public")
 OUTPUT_FILE = Path("index.html")
 
+MD_TEMPLATE = """\
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title}</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
+    body {{
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 48px 16px;
+    }}
+    .card {{
+      background: #fff;
+      border-radius: 16px;
+      padding: 40px 48px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.2);
+      max-width: 760px;
+      margin: 0 auto;
+    }}
+    .back {{
+      display: inline-block;
+      margin-bottom: 24px;
+      color: #667eea;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }}
+    .back:hover {{ text-decoration: underline; }}
+    #content h1,#content h2,#content h3 {{ margin: 1.2em 0 0.4em; color: #1a1a2e; }}
+    #content p {{ margin: 0.6em 0; line-height: 1.7; color: #333; }}
+    #content ul,#content ol {{ padding-left: 1.5em; margin: 0.6em 0; color: #333; line-height: 1.7; }}
+    #content code {{ background: #f4f4f8; padding: 2px 6px; border-radius: 4px; font-size: 0.88em; }}
+    #content pre {{ background: #f4f4f8; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 1em 0; }}
+    #content pre code {{ background: none; padding: 0; }}
+    #content blockquote {{ border-left: 4px solid #667eea; padding-left: 16px; color: #666; margin: 1em 0; }}
+    #content a {{ color: #667eea; }}
+    #content hr {{ border: none; border-top: 1px solid #eee; margin: 1.5em 0; }}
+    #content table {{ border-collapse: collapse; width: 100%; margin: 1em 0; }}
+    #content th,#content td {{ border: 1px solid #ddd; padding: 8px 12px; text-align: left; }}
+    #content th {{ background: #f4f4f8; font-weight: 600; }}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <a class="back" href="../../index.html">&#8592; Back to index</a>
+    <div id="content"></div>
+  </div>
+  <script>
+    const md = {content};
+    document.getElementById('content').innerHTML = marked.parse(md);
+  </script>
+</body>
+</html>
+"""
+
+
+def generate_md_viewer(md_path: Path) -> Path:
+    """Generate an HTML viewer for a .md file. Returns the viewer path."""
+    raw = md_path.read_text(encoding="utf-8")
+    escaped = raw.replace("\\", "\\\\").replace("`", "\\`").replace("${", "\\${")
+    title = html.escape(md_path.stem)
+    viewer_html = MD_TEMPLATE.format(
+        title=title,
+        content=f"`{escaped}`",
+    )
+    viewer_path = md_path.with_suffix(".html")
+    viewer_path.write_text(viewer_html, encoding="utf-8")
+    return viewer_path
+
 
 def build_tree(directory: Path) -> str:
     entries = sorted(directory.iterdir(), key=lambda p: (p.is_file(), p.name.lower()))
@@ -18,12 +93,19 @@ def build_tree(directory: Path) -> str:
         return ""
     lines = ["<ul>"]
     for entry in entries:
-        rel = entry.relative_to(Path("."))
         name = html.escape(entry.name)
         if entry.is_dir():
             inner = build_tree(entry)
             lines.append(f'<li><span class="folder">&#x1F4C1; {name}</span>{inner}</li>')
+        elif entry.suffix == ".md":
+            viewer = generate_md_viewer(entry)
+            rel = viewer.relative_to(Path("."))
+            lines.append(f'<li><a href="{rel}">&#x1F4C4; {name}</a></li>')
+        elif entry.suffix == ".html" and entry.with_suffix(".md").exists():
+            # skip auto-generated viewers from the listing
+            continue
         else:
+            rel = entry.relative_to(Path("."))
             lines.append(f'<li><a href="{rel}">&#x1F4C4; {name}</a></li>')
     lines.append("</ul>")
     return "\n".join(lines)
