@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
 Scans the `public/` directory and generates `index.html` with a linked folder tree.
+All files link to viewer.html?file=<path> for format-aware rendering.
 Run from the repo root: python3 scripts/generate_index.py
 """
 
 import html
-import os
 from pathlib import Path
 
 PUBLIC_DIR = Path("public")
@@ -18,13 +18,13 @@ def build_tree(directory: Path) -> str:
         return ""
     lines = ["<ul>"]
     for entry in entries:
-        rel = entry.relative_to(Path("."))
         name = html.escape(entry.name)
         if entry.is_dir():
             inner = build_tree(entry)
             lines.append(f'<li><span class="folder">&#x1F4C1; {name}</span>{inner}</li>')
         else:
-            lines.append(f'<li><a href="{rel}">&#x1F4C4; {name}</a></li>')
+            rel = entry.relative_to(Path("."))
+            lines.append(f'<li><a href="viewer.html?file={rel}">&#x1F4C4; {name}</a></li>')
     lines.append("</ul>")
     return "\n".join(lines)
 
